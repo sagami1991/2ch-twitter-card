@@ -14,24 +14,13 @@ const CONFIG = {
 
 function serverInitializer() {
     const server = http.createServer((req, res) => {
-        const url = req.url;
-        if (url === undefined) {
-            responseError(res, "URLが不正");
+        const urlInfo = getNichanUrlInfo(req.url);
+        if (urlInfo === null) {
+            responseError(res, "URLが不正 例: http://xxx/${ドメイン}.5ch.net/test/read.cgi/${板名}/${スレID}/${レス番号}");
             return;
         }
-        const splitedUrl = url.split("/");
-        if (!(splitedUrl.length >= 6 &&
-                splitedUrl[1] === "5ch" &&
-                splitedUrl[2] && // サーバー名
-                splitedUrl[3] && // 板名
-                /[0-9]{10}/.test(splitedUrl[4]) && // スレ番号
-                (!splitedUrl[5] || /[0-9]{1,4}/.test(splitedUrl[5])) // レス番号（省略可）
-            )) {
-            responseError(res, "URLが不正 例: http://xxx/5ch/serverName/bordName/threadId/commentId");
-            return;
-        }
-        const threadUrl = `http://${splitedUrl[2]}.${splitedUrl[1]}.net/test/read.cgi/${splitedUrl[3]}/${splitedUrl[4]}`;
-        const commentUrl = `${threadUrl}/${splitedUrl[5] || "1"}`;
+        const threadUrl = `http://${urlInfo.subDomainName}.5ch.net/test/read.cgi/${urlInfo.boardName}/${urlInfo.threadId}`;
+        const commentUrl = `${threadUrl}/${urlInfo.commentId || "1"}`;
         request.get(commentUrl, {
             encoding: null
         }, (error, nichanRes, /** @type {NodeBuffer} */ body) => {
@@ -52,7 +41,7 @@ function serverInitializer() {
                         resBody: textElement.textContent.substring(0, 200)
                     }),
                     "2chツイッター表示くん 0秒後に2chにリダイレクト",
-                    splitedUrl[5] ? commentUrl : threadUrl
+                    urlInfo.commentId ? commentUrl : threadUrl
                 ));
                 res.end();
             } catch (error) {
@@ -67,6 +56,19 @@ function serverInitializer() {
         // tslint:disable-next-line
         console.log(`Server running port: ${CONFIG.PORT}`);
     });
+}
+
+function getNichanUrlInfo(/** @type {string} */ url) {
+    const result = url.match(/\/(.+?)\.5ch\.net\/test\/read\.cgi\/(.+?)\/([0-9]{10})(\/([0-9]{1,4})\/?)?/);
+    if (result === null) {
+        return null;
+    }
+    return {
+        subDomainName: result[1],
+        boardName: result[2],
+        threadId: result[3],
+        commentId: result[5]
+    };
 }
 
 function responseError( /** @type {http.ServerResponse} */ res, /** @type {string} */ message) {
