@@ -9,7 +9,7 @@ const {
 } = require("jsdom");
 
 const CONFIG = {
-    PORT: process.env.PORT || 30154
+    PORT: process.env.PORT || 3000
 };
 
 function serverInitializer() {
@@ -22,10 +22,11 @@ function serverInitializer() {
         const splitedUrl = url.split("/");
         if (!(splitedUrl.length >= 6 &&
                 splitedUrl[1] === "5ch" &&
-                splitedUrl[2] &&
-                splitedUrl[3] &&
-                /[0-9]{10}/.test(splitedUrl[4]) &&
-                (!splitedUrl[5] || /[0-9]{1,4}/.test(splitedUrl[5])))) {
+                splitedUrl[2] && // サーバー名
+                splitedUrl[3] && // 板名
+                /[0-9]{10}/.test(splitedUrl[4]) && // スレ番号
+                (!splitedUrl[5] || /[0-9]{1,4}/.test(splitedUrl[5])) // レス番号（省略可）
+            )) {
             responseError(res, "URLが不正 例: http://xxx/5ch/serverName/bordName/threadId/commentId");
             return;
         }
@@ -47,11 +48,11 @@ function serverInitializer() {
                     "Content-Type": "text/html"
                 });
                 res.write(createHtml(create2chTwitterCard({
-                    threadTitle: title,
-                    resBody: textElement.textContent.substring(0, 200)
-                }),
-                "2chツイッター表示くん 0秒後に2chにリダイレクト",
-                splitedUrl[5] ? commentUrl : threadUrl
+                        threadTitle: title,
+                        resBody: textElement.textContent.substring(0, 200)
+                    }),
+                    "2chツイッター表示くん 0秒後に2chにリダイレクト",
+                    splitedUrl[5] ? commentUrl : threadUrl
                 ));
                 res.end();
             } catch (error) {
