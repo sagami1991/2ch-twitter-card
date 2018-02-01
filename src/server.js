@@ -3,7 +3,6 @@
 const http = require("http");
 const request = require("request");
 const escapeHtml = require("escape-html");
-const iconv = require("iconv-lite");
 const {
     JSDOM
 } = require("jsdom");
@@ -29,7 +28,6 @@ function serverInitializer() {
                 return;
             }
             try {
-                const decodedBody = iconv.decode(body, "shift_jis");
                 const dom = new JSDOM(body);
                 const title = dom.window.document.title;
                 const textElement = dom.window.document.querySelector("div.message > span.escaped");
