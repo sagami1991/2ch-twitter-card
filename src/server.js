@@ -80,10 +80,10 @@ function responseError( /** @type {http.ServerResponse} */ res, /** @type {strin
  */
 function create2chTwitterCard( /** @type {CardInfo} */ cardInfo) {
     return `
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeHtml(cardInfo.threadTitle)} 5ちゃんねる" />
     <meta name="twitter:description" content="${escapeHtml(cardInfo.resBody)}" />
-    <meta name="twitter:image" content="https://penguin.5ch.net/images/5ch_logo.png" />
+    <meta name="twitter:image" content="https://i.imgur.com/i1sq3No.jpg" />
     `;
 }
 
