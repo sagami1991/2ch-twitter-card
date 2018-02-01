@@ -29,12 +29,13 @@ function serverInitializer() {
             responseError(res, "URLが不正 例: http://xxx/5ch/serverName/bordName/threadId/commentId");
             return;
         }
-        const targetUrl = `http://${splitedUrl[2]}.${splitedUrl[1]}.net/test/read.cgi/${splitedUrl[3]}/${splitedUrl[4]}/${splitedUrl[5] || "1"}`;
-        request.get(targetUrl, {
+        const threadUrl = `http://${splitedUrl[2]}.${splitedUrl[1]}.net/test/read.cgi/${splitedUrl[3]}/${splitedUrl[4]}`;
+        const commentUrl = `${threadUrl}/${splitedUrl[5] || "1"}`;
+        request.get(commentUrl, {
             encoding: null
         }, (error, nichanRes, /** @type {NodeBuffer} */ body) => {
             if (error) {
-                responseError(res, `接続エラー URL: ${targetUrl}`);
+                responseError(res, `接続エラー URL: ${commentUrl}`);
                 return;
             }
             try {
@@ -48,7 +49,10 @@ function serverInitializer() {
                 res.write(createHtml(create2chTwitterCard({
                     threadTitle: title,
                     resBody: textElement.textContent.substring(0, 200)
-                }), "2chツイッター表示くん"));
+                }),
+                "2chツイッター表示くん 0秒後に2chにリダイレクト",
+                splitedUrl[5] ? commentUrl : threadUrl
+                ));
                 res.end();
             } catch (error) {
                 // tslint:disable-next-line
@@ -68,7 +72,7 @@ function responseError( /** @type {http.ServerResponse} */ res, /** @type {strin
     res.writeHead(200, {
         "Content-Type": "text/html"
     });
-    res.write(createHtml(null, `error: ${escapeHtml(message)}`));
+    res.write(createHtml(null, `error: ${message}`));
     res.end();
 }
 
@@ -87,7 +91,7 @@ function create2chTwitterCard( /** @type {CardInfo} */ cardInfo) {
     `;
 }
 
-function createHtml( /** @type {string} */ head, /** @type {string} */ body) {
+function createHtml( /** @type {string} */ head, /** @type {string} */ body, /** @type {string} */ redirectUrl) {
     return `
     <!DOCTYPE html>
     <html>
@@ -95,7 +99,14 @@ function createHtml( /** @type {string} */ head, /** @type {string} */ body) {
             <meta charset="utf-8">
             ${head ? head : ""}
         </head>
-            <body>${body}</body>
+            <body>
+            ${escapeHtml(body)}
+            ${redirectUrl ? `
+            <script>
+                location.href = "${escapeHtml(redirectUrl)}";
+            </script>
+            ` : ""}
+            </body>
     </html>
     `;
 }
